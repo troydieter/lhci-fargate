@@ -1,74 +1,102 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
+import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
-import * as ecs from 'aws-cdk-lib/aws-ecs'
-import * as cdk from 'aws-cdk-lib'
-import { FargateTaskDefinition, TaskDefinition } from 'aws-cdk-lib/aws-ecs';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
+import * as efs from 'aws-cdk-lib/aws-efs';
+import * as cr from 'aws-cdk-lib/custom-resources';
+import {FargateEfsCustomResource} from "./efs-mount-fargate-cr";
 
-export class LHCIStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+export class LHCIStack extends cdk.Stack {
+  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const vpc = new ec2.Vpc(this, 'lhcivpc');
+    const ecsCluster = new ecs.Cluster(this, 'LHCIECSCluster', {vpc: vpc});
 
-    const lb = new elbv2.ApplicationLoadBalancer(this, 'LB', {
+    const fileSystem = new efs.FileSystem(this, 'LHCIEfsFileSystem', {
       vpc: vpc,
-      internetFacing: true,
-      loadBalancerName: 'LHCIBalancer'
+      encrypted: true,
+      lifecyclePolicy: efs.LifecyclePolicy.AFTER_14_DAYS,
+      performanceMode: efs.PerformanceMode.GENERAL_PURPOSE,
+      throughputMode: efs.ThroughputMode.BURSTING
     });
 
-    const cluster = new ecs.Cluster(this, 'LHCICluster', {
-      vpc: vpc
+
+     const params = {
+      FileSystemId: fileSystem.fileSystemId,
+      PosixUser: {
+        Gid: 1000,
+        Uid: 1000
+      },
+      RootDirectory: {
+        CreationInfo: {
+          OwnerGid: 1000,
+          OwnerUid: 1000,
+          Permissions: '755'
+        },
+        Path: '/data'
+      },
+      Tags: [
+        {
+          Key: 'Name',
+          Value: 'lhci-data'
+        }
+      ]
+    };
+
+    const efsAccessPoint = new cr.AwsCustomResource(this, 'EfsAccessPoint', {
+       onUpdate: {
+           service: 'EFS',
+           action: 'createAccessPoint',
+           parameters: params,
+           physicalResourceId: cr.PhysicalResourceId.of('12121212121'),
+       },
+       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE})
     });
 
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
+    efsAccessPoint.node.addDependency(fileSystem);
+
+    const taskDef = new ecs.FargateTaskDefinition(this, "LHCITaskDef", {
       cpu: 512,
       memoryLimitMiB: 1024,
     });
 
-    const volume = {
-      name: "lhcidata",
-      efsVolumeConfiguration: {
-        fileSystemId: "EFS",
-        rootDirectory: 'lhci-data'
-      }
-    }
+    const containerDef = new ecs.ContainerDefinition(this, "LHCIContainerDef", {
+      image: ecs.ContainerImage.fromRegistry("patrickhulce/lhci-server"),
+      taskDefinition: taskDef
+    });
 
-    const port = 9001
+    containerDef.addPortMappings({
+      containerPort: 9001
+    });
 
-    const container = taskDefinition.addContainer('Container', {
-      image: ecs.ContainerImage.fromRegistry('patrickhulce/lhci-server'),
-      portMappings: [{ containerPort: port }],
-    })
+    const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
+      cluster: ecsCluster,
+      taskDefinition: taskDef,
+      desiredCount: 2
+    });
 
-    taskDefinition.addVolume(volume)
-    
-    const service = new ecs.FargateService(this, 'FargateService', {
-      cluster: cluster,
-      taskDefinition: taskDefinition,
-      desiredCount: 1,
-      serviceName: 'FargateService'
-    })
+    albFargateService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '30');
 
-    const tg1 = new elbv2.ApplicationTargetGroup(this, 'TargetGroup', {
-      vpc: vpc,
-      targets: [service],
-      protocol: elbv2.ApplicationProtocol.HTTP,
-      stickinessCookieDuration: cdk.Duration.days(1),
-      port: port,
-      healthCheck: {
-        path: '/',
-        port: `${port}`
-      }
-    })
+    // Override Platform version (until Latest = 1.4.0)
+    const albFargateServiceResource = albFargateService.service.node.findChild('Service') as ecs.CfnService;
+    albFargateServiceResource.addPropertyOverride('PlatformVersion', '1.4.0')
 
-    const listener = lb.addListener(`HTTPListener`, {
-      port: 80,
-      defaultAction: elbv2.ListenerAction.forward([tg1]) 
-    })
+    // Allow access to EFS from Fargate ECS
+    fileSystem.connections.allowDefaultPortFrom(albFargateService.service.connections);
 
-    new cdk.CfnOutput(this, 'LoadBalancerDNSName', { value: lb.loadBalancerDnsName });
+    //Custom Resource to add EFS Mount to Task Definition
+    const resource = new FargateEfsCustomResource(this, 'FargateEfsCustomResource', {
+        TaskDefinition: taskDef.taskDefinitionArn,
+        EcsService: albFargateService.service.serviceName,
+        EcsCluster: ecsCluster.clusterName,
+        EfsFileSystemId: fileSystem.fileSystemId,
+        EfsMountName: 'data'
+    });
+
+    resource.node.addDependency(albFargateService);
   }
 }
