@@ -1,13 +1,12 @@
-import { Stack, StackProps } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as cr from 'aws-cdk-lib/custom-resources';
+import { AutoScalingGroup } from '@aws-cdk/aws-autoscaling';
 import {FargateEfsCustomResource} from "./efs-mount-fargate-cr";
+
 
 export class LHCIStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -72,6 +71,8 @@ export class LHCIStack extends cdk.Stack {
     containerDef.addPortMappings({
       containerPort: 9001
     });
+
+
 
     const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
       cluster: ecsCluster,
