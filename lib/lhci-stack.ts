@@ -5,20 +5,21 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as cdk from 'aws-cdk-lib'
+import { FargateTaskDefinition, TaskDefinition } from 'aws-cdk-lib/aws-ecs';
 
-export class DashboardsStack extends Stack {
+export class LHCIStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const vpc = new ec2.Vpc(this, 'MyVpc');
+    const vpc = new ec2.Vpc(this, 'lhcivpc');
 
     const lb = new elbv2.ApplicationLoadBalancer(this, 'LB', {
       vpc: vpc,
       internetFacing: true,
-      loadBalancerName: 'DashboardBalancer'
+      loadBalancerName: 'LHCIBalancer'
     });
 
-    const cluster = new ecs.Cluster(this, 'DashboardCluster', {
+    const cluster = new ecs.Cluster(this, 'LHCICluster', {
       vpc: vpc
     });
 
@@ -27,12 +28,22 @@ export class DashboardsStack extends Stack {
       memoryLimitMiB: 1024,
     });
 
+    const volume = {
+      name: "lhcidata",
+      efsVolumeConfiguration: {
+        fileSystemId: "EFS",
+        rootDirectory: 'lhci-data'
+      }
+    }
+
     const port = 9001
 
     const container = taskDefinition.addContainer('Container', {
       image: ecs.ContainerImage.fromRegistry('patrickhulce/lhci-server'),
       portMappings: [{ containerPort: port }],
     })
+
+    taskDefinition.addVolume(volume)
     
     const service = new ecs.FargateService(this, 'FargateService', {
       cluster: cluster,
