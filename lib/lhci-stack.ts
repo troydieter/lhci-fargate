@@ -4,7 +4,6 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as cr from 'aws-cdk-lib/custom-resources';
-import { AutoScalingGroup } from '@aws-cdk/aws-autoscaling';
 import {FargateEfsCustomResource} from "./efs-mount-fargate-cr";
 
 
