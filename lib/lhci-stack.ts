@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Certificate, CertificateValidation, isDnsValidatedCertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { Protocol } from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
@@ -92,11 +93,15 @@ export class LHCIStack extends cdk.Stack {
       desiredCount: 2,
       listenerPort: 443,
       certificate: cert,
+      redirectHTTP: true,
       domainName: this.node.tryGetContext('lhci_domain_name'),
       domainZone: lhci_domain_zone_name
     });
 
     albFargateService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '30');
+    albFargateService.targetGroup.configureHealthCheck({
+      healthyHttpCodes: this.node.tryGetContext('lhci_health_check_port')
+    })
 
     // Override Platform version (until Latest = 1.4.0)
     const albFargateServiceResource = albFargateService.service.node.findChild('Service') as ecs.CfnService;
