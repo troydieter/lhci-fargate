@@ -72,7 +72,7 @@ export class LHCIStack extends cdk.Stack {
       containerPort: 9001
     });
 
-    const lhci_domain_zone_id = HostedZone.fromLookup(this, "lhci_domain_zone_id", { domainName: this.node.tryGetContext('lhci_domain_zone_id') })
+    const lhci_domain_zone_name = HostedZone.fromLookup(this, "lhci_domain_zone_name", { domainName: this.node.tryGetContext('lhci_domain_zone_name') })
 
     const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
       cluster: ecsCluster,
@@ -80,7 +80,7 @@ export class LHCIStack extends cdk.Stack {
       desiredCount: 2,
       listenerPort: 443,
       domainName: this.node.tryGetContext('lhci_domain_name'),
-      domainZone: lhci_domain_zone_id
+      domainZone: lhci_domain_zone_name
     });
 
     albFargateService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '30');
