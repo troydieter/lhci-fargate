@@ -12,7 +12,9 @@ export class LHCIStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = new ec2.Vpc(this, 'lhcivpc');
+    const vpc = new ec2.Vpc(this, 'lhcivpc', {
+      cidr: this.node.tryGetContext('fargate_vpc_cidr')
+    });
     const ecsCluster = new ecs.Cluster(this, 'LHCIECSCluster', { vpc: vpc });
 
     const fileSystem = new efs.FileSystem(this, 'LHCIEfsFileSystem', {
