@@ -3,8 +3,9 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
+import { HostedZone } from 'aws-cdk-lib/aws-route53';
 import * as cr from 'aws-cdk-lib/custom-resources';
-import {FargateEfsCustomResource} from "./efs-mount-fargate-cr";
+import { FargateEfsCustomResource } from "./efs-mount-fargate-cr";
 
 
 export class LHCIStack extends cdk.Stack {
@@ -12,7 +13,7 @@ export class LHCIStack extends cdk.Stack {
     super(scope, id, props);
 
     const vpc = new ec2.Vpc(this, 'lhcivpc');
-    const ecsCluster = new ecs.Cluster(this, 'LHCIECSCluster', {vpc: vpc});
+    const ecsCluster = new ecs.Cluster(this, 'LHCIECSCluster', { vpc: vpc });
 
     const fileSystem = new efs.FileSystem(this, 'LHCIEfsFileSystem', {
       vpc: vpc,
@@ -23,7 +24,7 @@ export class LHCIStack extends cdk.Stack {
     });
 
 
-     const params = {
+    const params = {
       FileSystemId: fileSystem.fileSystemId,
       PosixUser: {
         Gid: 1000,
@@ -46,13 +47,13 @@ export class LHCIStack extends cdk.Stack {
     };
 
     const efsAccessPoint = new cr.AwsCustomResource(this, 'EfsAccessPoint', {
-       onUpdate: {
-           service: 'EFS',
-           action: 'createAccessPoint',
-           parameters: params,
-           physicalResourceId: cr.PhysicalResourceId.of('12121212121'),
-       },
-       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE})
+      onUpdate: {
+        service: 'EFS',
+        action: 'createAccessPoint',
+        parameters: params,
+        physicalResourceId: cr.PhysicalResourceId.of('12121212121'),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE })
     });
 
     efsAccessPoint.node.addDependency(fileSystem);
@@ -71,12 +72,15 @@ export class LHCIStack extends cdk.Stack {
       containerPort: 9001
     });
 
-
+    const lhci_domain_zone = new HostedZone(this, 'lhci_domain_zone', { zoneName: this.node.tryGetContext('lhci_domain_zone') })
 
     const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
       cluster: ecsCluster,
       taskDefinition: taskDef,
-      desiredCount: 2
+      desiredCount: 2,
+      listenerPort: 443,
+      domainName: this.node.tryGetContext('lhci_domain_name'),
+      domainZone: lhci_domain_zone
     });
 
     albFargateService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '30');
@@ -90,11 +94,11 @@ export class LHCIStack extends cdk.Stack {
 
     //Custom Resource to add EFS Mount to Task Definition
     const resource = new FargateEfsCustomResource(this, 'FargateEfsCustomResource', {
-        TaskDefinition: taskDef.taskDefinitionArn,
-        EcsService: albFargateService.service.serviceName,
-        EcsCluster: ecsCluster.clusterName,
-        EfsFileSystemId: fileSystem.fileSystemId,
-        EfsMountName: 'data'
+      TaskDefinition: taskDef.taskDefinitionArn,
+      EcsService: albFargateService.service.serviceName,
+      EcsCluster: ecsCluster.clusterName,
+      EfsFileSystemId: fileSystem.fileSystemId,
+      EfsMountName: 'data'
     });
 
     resource.node.addDependency(albFargateService);

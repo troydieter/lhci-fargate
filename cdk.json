@@ -27,6 +27,8 @@
     "@aws-cdk/core:target-partitions": [
       "aws",
       "aws-cn"
-    ]
+    ],
+    "lhci_domain_name": "lhci.troydieter.com",
+    "lhci_domain_zone": "troydieter.com"
   }
 }
