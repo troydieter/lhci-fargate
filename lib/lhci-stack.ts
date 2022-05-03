@@ -1,4 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
+import { Certificate, CertificateValidation, isDnsValidatedCertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
@@ -76,11 +77,21 @@ export class LHCIStack extends cdk.Stack {
 
     const lhci_domain_zone_name = HostedZone.fromLookup(this, "lhci_domain_zone_name", { domainName: this.node.tryGetContext('lhci_domain_zone_name') })
 
+    const cert = new Certificate(
+      this,
+      "certificate",
+      {
+        domainName: this.node.tryGetContext('lhci_domain_name'),
+        validation: CertificateValidation.fromDns(lhci_domain_zone_name),
+      }
+    );
+
     const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
       cluster: ecsCluster,
       taskDefinition: taskDef,
       desiredCount: 2,
       listenerPort: 443,
+      certificate: cert,
       domainName: this.node.tryGetContext('lhci_domain_name'),
       domainZone: lhci_domain_zone_name
     });
