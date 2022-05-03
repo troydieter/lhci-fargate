@@ -2,7 +2,8 @@
 
 Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+# Diagram
+![diagram](https://i.imgur.com/OcZkkr2.png)
 
 ## Useful commands
 
