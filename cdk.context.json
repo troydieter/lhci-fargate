@@ -6,5 +6,9 @@
     "us-east-1d",
     "us-east-1e",
     "us-east-1f"
-  ]
+  ],
+  "hosted-zone:account=550767824695:domainName=troydieter.com.:region=us-east-1": {
+    "Id": "/hostedzone/Z10057183MLGVY8QQ2VGK",
+    "Name": "troydieter.com."
+  }
 }
