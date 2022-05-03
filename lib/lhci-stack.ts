@@ -72,7 +72,7 @@ export class LHCIStack extends cdk.Stack {
       containerPort: 9001
     });
 
-    const lhci_domain_zone_id = HostedZone.fromLookup(this, "lhci_domain_zone_id", { domainName: this.node.tryGetContext('lhci_domain_name') })
+    const lhci_domain_zone_id = HostedZone.fromLookup(this, "lhci_domain_zone_id", { domainName: this.node.tryGetContext('lhci_domain_zone_id') })
 
     const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
       cluster: ecsCluster,
