@@ -5,6 +5,11 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 # Diagram
 ![diagram](https://i.imgur.com/OcZkkr2.png)
 
+# Noted cleanup
+
+1. You may need to clean up `EFS` filesystems when creating and destroying this CDK app (they may persist)
+2. Check for any lingering `EIP`'s that may resided
+
 ## Useful commands
 
 * `npm run build`   compile typescript to js
