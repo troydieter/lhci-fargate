@@ -1,18 +1,23 @@
 import * as cdk from 'aws-cdk-lib';
+import { Certificate, CertificateValidation, isDnsValidatedCertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { Protocol } from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
+import { HostedZone } from 'aws-cdk-lib/aws-route53';
 import * as cr from 'aws-cdk-lib/custom-resources';
-import {FargateEfsCustomResource} from "./efs-mount-fargate-cr";
+import { FargateEfsCustomResource } from "./efs-mount-fargate-cr";
 
 
 export class LHCIStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = new ec2.Vpc(this, 'lhcivpc');
-    const ecsCluster = new ecs.Cluster(this, 'LHCIECSCluster', {vpc: vpc});
+    const vpc = new ec2.Vpc(this, 'lhcivpc', {
+      cidr: this.node.tryGetContext('fargate_vpc_cidr')
+    });
+    const ecsCluster = new ecs.Cluster(this, 'LHCIECSCluster', { vpc: vpc });
 
     const fileSystem = new efs.FileSystem(this, 'LHCIEfsFileSystem', {
       vpc: vpc,
@@ -23,7 +28,7 @@ export class LHCIStack extends cdk.Stack {
     });
 
 
-     const params = {
+    const params = {
       FileSystemId: fileSystem.fileSystemId,
       PosixUser: {
         Gid: 1000,
@@ -46,13 +51,13 @@ export class LHCIStack extends cdk.Stack {
     };
 
     const efsAccessPoint = new cr.AwsCustomResource(this, 'EfsAccessPoint', {
-       onUpdate: {
-           service: 'EFS',
-           action: 'createAccessPoint',
-           parameters: params,
-           physicalResourceId: cr.PhysicalResourceId.of('12121212121'),
-       },
-       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE})
+      onUpdate: {
+        service: 'EFS',
+        action: 'createAccessPoint',
+        parameters: params,
+        physicalResourceId: cr.PhysicalResourceId.of('12121212121'),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE })
     });
 
     efsAccessPoint.node.addDependency(fileSystem);
@@ -71,15 +76,32 @@ export class LHCIStack extends cdk.Stack {
       containerPort: 9001
     });
 
+    const lhci_domain_zone_name = HostedZone.fromLookup(this, "lhci_domain_zone_name", { domainName: this.node.tryGetContext('lhci_domain_zone_name') })
 
+    const cert = new Certificate(
+      this,
+      "certificate",
+      {
+        domainName: this.node.tryGetContext('lhci_domain_name'),
+        validation: CertificateValidation.fromDns(lhci_domain_zone_name),
+      }
+    );
 
     const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
       cluster: ecsCluster,
       taskDefinition: taskDef,
-      desiredCount: 2
+      desiredCount: 2,
+      listenerPort: 443,
+      certificate: cert,
+      redirectHTTP: true,
+      domainName: this.node.tryGetContext('lhci_domain_name'),
+      domainZone: lhci_domain_zone_name
     });
 
     albFargateService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '30');
+    albFargateService.targetGroup.configureHealthCheck({
+      healthyHttpCodes: this.node.tryGetContext('lhci_health_check_port')
+    })
 
     // Override Platform version (until Latest = 1.4.0)
     const albFargateServiceResource = albFargateService.service.node.findChild('Service') as ecs.CfnService;
@@ -90,11 +112,11 @@ export class LHCIStack extends cdk.Stack {
 
     //Custom Resource to add EFS Mount to Task Definition
     const resource = new FargateEfsCustomResource(this, 'FargateEfsCustomResource', {
-        TaskDefinition: taskDef.taskDefinitionArn,
-        EcsService: albFargateService.service.serviceName,
-        EcsCluster: ecsCluster.clusterName,
-        EfsFileSystemId: fileSystem.fileSystemId,
-        EfsMountName: 'data'
+      TaskDefinition: taskDef.taskDefinitionArn,
+      EcsService: albFargateService.service.serviceName,
+      EcsCluster: ecsCluster.clusterName,
+      EfsFileSystemId: fileSystem.fileSystemId,
+      EfsMountName: 'data'
     });
 
     resource.node.addDependency(albFargateService);
