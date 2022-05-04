@@ -13,7 +13,7 @@
   "devDependencies": {
     "@types/jest": "27.5.0",
     "@types/node": "16.11.33",
-    "aws-cdk": "2.22.0",
+    "aws-cdk": "2.23.0",
     "jest": "28.0.3",
     "ts-jest": "28.0.1",
     "ts-node": "10.7.0",
@@ -23,7 +23,7 @@
   "dependencies": {
     "@mhlabs/cfn-diagram": "1.1.33",
     "@mhlabs/cfn-diagram-ci": "0.0.3",
-    "aws-cdk-lib": "2.22.0",
+    "aws-cdk-lib": "2.23.0",
     "constructs": "10.0.130",
     "source-map-support": "0.5.21"
   }
