@@ -27,6 +27,10 @@
     "@aws-cdk/core:target-partitions": [
       "aws",
       "aws-cn"
-    ]
+    ],
+    "fargate_vpc_cidr": "172.16.0.0/16",
+    "lhci_domain_name": "lhci.troydieter.com",
+    "lhci_domain_zone_name": "troydieter.com.",
+    "lhci_health_check_port": "302"
   }
 }
