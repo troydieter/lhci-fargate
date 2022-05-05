@@ -2,6 +2,9 @@
 
 Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
+# Documentation
+📚 [Read the docs, here!](https://troydieter.github.io/lhci-fargate/) 📚
+
 # Setup
 1. Configure cdk.json with your Route 53 forward zone and desired CNAME record name
 2. `cdk deploy`
