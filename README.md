@@ -2,10 +2,17 @@
 
 Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
-# Documentation
+# Table of Contents
+- [Documentation](#documentation)
+- [Setup](#setup)
+- [Diagram](#diagram)
+- [Noted cleanup](#noted-cleanup)
+- [Useful commands](#useful-commands)
+
+## Documentation
 📚 [Read the docs, here!](https://troydieter.github.io/lhci-fargate/) 📚
 
-# Setup
+## Setup
 1. Configure cdk.json with your Route 53 forward zone and desired CNAME record name
 2. `cdk deploy`
 3. `lhci wizard` will yield something similar to:
@@ -80,10 +87,10 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
     9. Observe the results on the `lhci` server: https://lhci.example.com
 
         ![results](https://i.imgur.com/coKUZbs.png)
-# Diagram
+## Diagram
 ![diagram](https://i.imgur.com/OcZkkr2.png)
 
-# Noted cleanup
+## Noted cleanup
 
 1. You may need to clean up `EFS` filesystems when creating and destroying this CDK app (they may persist)
 2. Check for any lingering `EIP`'s that may resided
