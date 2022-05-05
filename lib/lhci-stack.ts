@@ -98,6 +98,15 @@ export class LHCIStack extends cdk.Stack {
       domainZone: lhci_domain_zone_name
     });
 
+    const scalableTarget = albFargateService.service.autoScaleTaskCount({
+      minCapacity: 2,
+      maxCapacity: 4,
+    });
+
+    scalableTarget.scaleOnCpuUtilization('CpuScaling', {
+      targetUtilizationPercent: 75,
+    });
+
     albFargateService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '30');
     albFargateService.targetGroup.configureHealthCheck({
       healthyHttpCodes: this.node.tryGetContext('lhci_health_check_port')
