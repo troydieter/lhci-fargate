@@ -11,3 +11,4 @@ template.drawio.bak
 diagram.json
 /.lighthouseci
 public/
+cdk.context.json
