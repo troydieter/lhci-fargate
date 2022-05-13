@@ -94,7 +94,8 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
 ## Noted cleanup
 
-1. You may need to clean up `EFS` filesystems when creating and destroying this CDK app (they may persist)
+1. ~~You may need to clean up `EFS` filesystems when creating and destroying this CDK app (they may persist)~~
+    > Per v1.2 - I've added the proper RemovalPolicy for the EFS FileSystem to Destroy after removal
 2. Check for any lingering `EIP`'s that may resided
 
 ## Useful commands
