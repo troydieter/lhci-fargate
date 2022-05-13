@@ -25,7 +25,7 @@ export class FargateEfsCustomResource extends Construct {
 
     const onEvent = new lambda.SingletonFunction(this, 'Singleton', {
       uuid: 'f7d4f730-4ee1-11e8-9c2d-fa7ae01bbebc',
-      code: new lambda.InlineCode(fs.readFileSync('./lambda.js', { encoding: 'utf-8' })),
+      code: new lambda.InlineCode(fs.readFileSync('./lib/lambda.js', { encoding: 'utf-8' })),
       handler: 'index.handler',
       timeout: cdk.Duration.seconds(300),
       runtime: lambda.Runtime.NODEJS_12_X,
