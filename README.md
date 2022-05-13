@@ -31,7 +31,7 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 >
 > ? What branch is considered the repo's trunk or main branch? main
 
-6. Create a `.lighthouserc.js` file:
+6. Modify your `lighthouserc.js` file accordingly:
 
         module.exports = {
             ci: {
