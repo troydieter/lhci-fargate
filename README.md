@@ -14,8 +14,10 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
 ## Setup
 1. Configure cdk.json with your Route 53 forward zone and desired CNAME record name
-2. `cdk deploy`
-3. `lhci wizard` will yield something similar to:
+2. `npm i`
+3. `npm run build`
+4. `cdk deploy`
+5. `lhci wizard` will yield something similar to:
 
 > troy:/mnt/c/coderepo/lhci-fargate$ lhci wizard
 >
@@ -29,7 +31,7 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 >
 > ? What branch is considered the repo's trunk or main branch? main
 
-4. Create a `.lighthouserc.js` file:
+6. Create a `.lighthouserc.js` file:
 
         module.exports = {
             ci: {
@@ -52,10 +54,10 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
             },
             },
         };
-    5. Add the `buildToken` to the `.lighthouserc.js` file to the `token` value
-    6. Browse to the LHCI server (for example, https://lhci.example.com and click the `gear` in the upper-hand left corner)
-    7. Add in the `adminToken` to the field in the settings for the LH project
-    8. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
+    7. Add the `buildToken` to the `.lighthouserc.js` file to the `token` value
+    8. Browse to the LHCI server (for example, https://lhci.example.com and click the `gear` in the upper-hand left corner)
+    9. Add in the `adminToken` to the field in the settings for the LH project
+    10. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
 
             PS C:\coderepo\lhci-fargate> lhci autorun
             ✅  .lighthouseci/ directory writable
@@ -84,7 +86,7 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
             Done running autorun.
     
-    9. Observe the results on the `lhci` server: https://lhci.example.com
+    11. Observe the results on the `lhci` server: https://lhci.example.com
 
         ![results](https://i.imgur.com/coKUZbs.png)
 ## Diagram
