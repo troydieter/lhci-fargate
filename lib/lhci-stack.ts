@@ -7,9 +7,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import { HostedZone } from 'aws-cdk-lib/aws-route53';
-import * as cr from 'aws-cdk-lib/custom-resources';
-import { FargateEfsCustomResource } from "./efs-mount-fargate-cr";
-
+import * as iam from 'aws-cdk-lib/aws-iam'
 
 export class LHCIStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -29,49 +27,37 @@ export class LHCIStack extends cdk.Stack {
       removalPolicy: RemovalPolicy.DESTROY
     });
 
-
-    const params = {
-      FileSystemId: fileSystem.fileSystemId,
-      PosixUser: {
-        Gid: 1000,
-        Uid: 1000
-      },
-      RootDirectory: {
-        CreationInfo: {
-          OwnerGid: 1000,
-          OwnerUid: 1000,
-          Permissions: '755'
-        },
-        Path: '/data'
-      },
-      Tags: [
-        {
-          Key: 'Name',
-          Value: 'lhci-data'
-        }
-      ]
-    };
-
-    const efsAccessPoint = new cr.AwsCustomResource(this, 'EfsAccessPoint', {
-      onUpdate: {
-        service: 'EFS',
-        action: 'createAccessPoint',
-        parameters: params,
-        physicalResourceId: cr.PhysicalResourceId.of('12121212121'),
-      },
-      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE })
+    const accessPoint = new efs.AccessPoint(this, 'AccessPoint', {
+      fileSystem: fileSystem,
     });
-
-    efsAccessPoint.node.addDependency(fileSystem);
+    const volumeName = 'efs-volume';
 
     const taskDef = new ecs.FargateTaskDefinition(this, "LHCITaskDef", {
       cpu: 512,
       memoryLimitMiB: 1024,
     });
 
+    taskDef.addVolume({
+      name: volumeName,
+      efsVolumeConfiguration: {
+        fileSystemId: fileSystem.fileSystemId,
+        transitEncryption: 'ENABLED',
+        authorizationConfig:{
+          accessPointId: accessPoint.accessPointId,
+          iam: 'ENABLED'
+        }
+      }
+    });
+
     const containerDef = new ecs.ContainerDefinition(this, "LHCIContainerDef", {
       image: ecs.ContainerImage.fromRegistry("patrickhulce/lhci-server"),
       taskDefinition: taskDef
+    });
+
+    containerDef.addMountPoints({
+      containerPath: '/data',
+      sourceVolume: volumeName,
+      readOnly: false
     });
 
     containerDef.addPortMappings({
@@ -101,8 +87,8 @@ export class LHCIStack extends cdk.Stack {
     });
 
     const scalableTarget = albFargateService.service.autoScaleTaskCount({
-      minCapacity: 2,
-      maxCapacity: 4,
+      minCapacity: 1,
+      maxCapacity: 2,
     });
 
     scalableTarget.scaleOnCpuUtilization('CpuScaling', {
@@ -121,15 +107,23 @@ export class LHCIStack extends cdk.Stack {
     // Allow access to EFS from Fargate ECS
     fileSystem.connections.allowDefaultPortFrom(albFargateService.service.connections);
 
-    //Custom Resource to add EFS Mount to Task Definition
-    const resource = new FargateEfsCustomResource(this, 'FargateEfsCustomResource', {
-      TaskDefinition: taskDef.taskDefinitionArn,
-      EcsService: albFargateService.service.serviceName,
-      EcsCluster: ecsCluster.clusterName,
-      EfsFileSystemId: fileSystem.fileSystemId,
-      EfsMountName: 'data'
-    });
-
-    resource.node.addDependency(albFargateService);
+    taskDef.addToTaskRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'elasticfilesystem:ClientRootAccess',
+          'elasticfilesystem:ClientWrite',
+          'elasticfilesystem:ClientMount',
+          'elasticfilesystem:DescribeMountTargets'
+        ],
+        resources: [`arn:aws:elasticfilesystem:${process.env.CDK_DEFAULT_REGION}:${process.env.CDK_DEFAULT_ACCOUNT}:file-system/${fileSystem.fileSystemId}`]
+      })
+    );
+    
+    taskDef.addToTaskRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ec2:DescribeAvailabilityZones'],
+        resources: ['*']
+      })
+    );
   }
 }
