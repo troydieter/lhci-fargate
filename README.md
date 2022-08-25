@@ -2,6 +2,8 @@
 
 Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
+## V1.1
+
 # Table of Contents
 - [Documentation](#documentation)
 - [Setup](#setup)
@@ -25,9 +27,9 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 >
 > ? What is the URL of your LHCI server? https://lhci.example.com
 >
-> ? What would you like to name the project? tf-fargate
+> ? What would you like to name the project? lhci-fargate
 >
-> ? Where is the project's code hosted? https://github.com/example/tf-fargate
+> ? Where is the project's code hosted? https://github.com/example/lhci-fargate
 >
 > ? What branch is considered the repo's trunk or main branch? main
 
@@ -76,12 +78,12 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
             Run #2...done.
             Done running Lighthouse!
 
-            Saving CI project tf-fargate (780548b4-d479-4403-9500-e57f87b64d8d)
+            Saving CI project lhci-fargate (780548b4-d479-4403-9500-e57f87b64d8d)
             Saving CI build (9e77cb40-546e-4c64-b7b1-0ad538255d9b)
             Saved LHR to https://lhci.troydieter.com (2d027171-faf1-40af-bbdb-a4cc8a04a4d5)
             Saved LHR to https://lhci.troydieter.com (eef82c8e-cf94-4b3d-a76e-b4e7044e2096)
             Done saving build results to Lighthouse CI
-            View build diff at https://lhci.troydieter.com/app/projects/tf-fargate/compare/9e77cb40-546e-4c64-b7b1-0ad538255d9b
+            View build diff at https://lhci.troydieter.com/app/projects/lhci-fargate/compare/9e77cb40-546e-4c64-b7b1-0ad538255d9b
             No GitHub token set, skipping GitHub status check.
 
             Done running autorun.
