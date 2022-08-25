@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { RemovalPolicy } from 'aws-cdk-lib';
-import { Certificate, CertificateValidation, isDnsValidatedCertificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
@@ -26,28 +26,6 @@ export class LHCIStack extends cdk.Stack {
       removalPolicy: RemovalPolicy.DESTROY
     });
 
-    const params = {
-      FileSystemId: fileSystem.fileSystemId,
-      PosixUser: {
-        Gid: 1000,
-        Uid: 1000
-      },
-      RootDirectory: {
-        CreationInfo: {
-          OwnerGid: 1000,
-          OwnerUid: 1000,
-          Permissions: '755'
-        },
-        Path: '/data'
-      },
-      Tags: [
-        {
-          Key: 'Name',
-          Value: 'lhci-data'
-        }
-      ]
-    };
-
     const accessPoint = new efs.AccessPoint(this, 'AccessPoint', {
       fileSystem: fileSystem
     });
@@ -71,7 +49,7 @@ export class LHCIStack extends cdk.Stack {
     });
 
     const containerDef = new ecs.ContainerDefinition(this, "LHCIContainerDef", {
-      image: ecs.ContainerImage.fromRegistry("patrickhulce/lhci-server"),
+      image: ecs.ContainerImage.fromRegistry("patrickhulce/lhci-server:latest"),
       taskDefinition: taskDef
     });
 
