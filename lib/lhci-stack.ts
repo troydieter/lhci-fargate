@@ -1,12 +1,14 @@
 import * as cdk from 'aws-cdk-lib';
-import { RemovalPolicy } from 'aws-cdk-lib';
+import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import { HostedZone } from 'aws-cdk-lib/aws-route53';
-import * as iam from 'aws-cdk-lib/aws-iam'
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+import { WafwebaclToAlbProps, WafwebaclToAlb } from "@aws-solutions-constructs/aws-wafwebacl-alb";
 
 export class LHCIStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -85,6 +87,12 @@ export class LHCIStack extends cdk.Stack {
       domainZone: lhci_domain_zone_name
     });
 
+    const lhcilb = albFargateService.loadBalancer
+
+    new WafwebaclToAlb(this, 'lhci-wafwebacl-alb', {
+      existingLoadBalancerObj: lhcilb
+    });
+
     const scalableTarget = albFargateService.service.autoScaleTaskCount({
       minCapacity: 2,
       maxCapacity: 4,
@@ -124,5 +132,5 @@ export class LHCIStack extends cdk.Stack {
         resources: ['*']
       })
     );
-  }
+}
 }
