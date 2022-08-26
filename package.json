@@ -11,6 +11,8 @@
     "cdk": "cdk"
   },
   "devDependencies": {
+    "@aws-cdk/aws-wafv2": "^1.170.0",
+    "@aws-solutions-constructs/aws-wafwebacl-alb": "^2.20.0",
     "@types/jest": "27.5.2",
     "@types/node": "16.11.34",
     "aws-cdk": "2.39.0",
