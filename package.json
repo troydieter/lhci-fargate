@@ -24,7 +24,7 @@
     "@mhlabs/cfn-diagram": "1.1.36",
     "@mhlabs/cfn-diagram-ci": "0.0.3",
     "aws-cdk-lib": "2.39.0",
-    "constructs": "10.1.6",
+    "constructs": "10.1.87",
     "source-map-support": "0.5.21"
   }
 }
