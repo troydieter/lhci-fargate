@@ -2,8 +2,6 @@
 
 Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
-## V1.3
-
 # Table of Contents
 - [Documentation](#documentation)
 - [Setup](#setup)
