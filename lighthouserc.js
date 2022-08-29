@@ -12,7 +12,7 @@ module.exports = {
     },
     upload: {
         target: 'lhci',
-        serverBaseUrl: 'https://lhci.example.com',
+        serverBaseUrl: 'https://lighthouse.example.com',
         token: 'example-000-example',
         ignoreDuplicateBuildFailure: true,
         allowOverwriteOfLatestBranchBuild: true
