@@ -134,7 +134,9 @@ export class LHCIStack extends cdk.Stack {
 
 
     const wf = new Watchful(this, 'watchful', {
-      alarmEmail: this.node.tryGetContext('lhci_mon_email')
+      alarmEmail: this.node.tryGetContext('lhci_mon_email'),
+      dashboard: true,
+      dashboardName: 'LHCI-Dashboard-ECS-Service'
     });
     wf.watchScope(albFargateService)
 }
