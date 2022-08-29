@@ -9,7 +9,7 @@ import { HostedZone } from 'aws-cdk-lib/aws-route53';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { WafwebaclToAlbProps, WafwebaclToAlb } from "@aws-solutions-constructs/aws-wafwebacl-alb";
-
+import { Watchful } from 'cdk-watchful'
 export class LHCIStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -132,5 +132,11 @@ export class LHCIStack extends cdk.Stack {
         resources: ['*']
       })
     );
+
+
+    const wf = new Watchful(this, 'watchful', {
+      alarmEmail: this.node.tryGetContext('lhci_mon_email')
+    });
+    wf.watchScope(albFargateService)
 }
 }
