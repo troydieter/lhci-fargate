@@ -30,7 +30,7 @@ export class LHCIStack extends cdk.Stack {
     const accessPoint = new efs.AccessPoint(this, 'AccessPoint', {
       fileSystem: fileSystem
     });
-    const volumeName = 'efs-volume';
+    const volumeName = 'lhci-efs-volume';
 
     const taskDef = new ecs.FargateTaskDefinition(this, "LHCITaskDef", {
       cpu: 512,
@@ -75,7 +75,7 @@ export class LHCIStack extends cdk.Stack {
       }
     );
 
-    const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service01', {
+    const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'LHCI_ECS_Service', {
       cluster: ecsCluster,
       taskDefinition: taskDef,
       desiredCount: 2,
