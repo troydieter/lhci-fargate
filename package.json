@@ -1,6 +1,6 @@
 {
   "name": "LHCI_Fargate",
-  "version": "1.5",
+  "version": "1.51",
   "bin": {
     "lhci-fargate": "bin/lhci-fargate.ts"
   },
@@ -8,7 +8,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "lhci_deploy": "npm i && npm run build && cdk deploy"
   },
   "devDependencies": {
     "@aws-cdk/aws-wafv2": "1.170.0",

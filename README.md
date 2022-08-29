@@ -14,10 +14,8 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
 ## Setup
 1. Configure cdk.json with your Route 53 forward zone and desired CNAME record name
-2. `npm i`
-3. `npm run build`
-4. `cdk deploy`
-5. `lhci wizard` will yield something similar to:
+2. `npm run lhci_deploy`
+3. `lhci wizard` will yield something similar to:
 
 > troy:/mnt/c/coderepo/lhci-fargate$ lhci wizard
 >
@@ -31,7 +29,7 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 >
 > ? What branch is considered the repo's trunk or main branch? main
 
-6. Modify your `lighthouserc.js` file accordingly:
+4. Modify your `lighthouserc.js` file accordingly:
 
         module.exports = {
             ci: {
@@ -54,10 +52,10 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
             },
             },
         };
-    7. Add the `buildToken` to the `.lighthouserc.js` file to the `token` value
-    8. Browse to the LHCI server (for example, https://lhci.example.com and click the `gear` in the upper-hand left corner)
-    9. Add in the `adminToken` to the field in the settings for the LH project
-    10. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
+5. Add the `buildToken` to the `.lighthouserc.js` file to the `token` value
+6. Browse to the LHCI server (for example, https://lhci.example.com and click the `gear` in the upper-hand left corner)
+7. Add in the `adminToken` to the field in the settings for the LH project
+8. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
 
             PS C:\coderepo\lhci-fargate> lhci autorun
             ✅  .lighthouseci/ directory writable
@@ -71,32 +69,26 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
             ✅  LHCI server can accept a build for this commit hash
             Healthcheck passed!
 
-            Running Lighthouse 2 time(s) on https://www.troydieter.com
+            Running Lighthouse 2 time(s) on https://www.example.com
             Run #1...done.
             Run #2...done.
             Done running Lighthouse!
 
             Saving CI project lhci-fargate (780548b4-d479-4403-9500-e57f87b64d8d)
             Saving CI build (9e77cb40-546e-4c64-b7b1-0ad538255d9b)
-            Saved LHR to https://lhci.troydieter.com (2d027171-faf1-40af-bbdb-a4cc8a04a4d5)
-            Saved LHR to https://lhci.troydieter.com (eef82c8e-cf94-4b3d-a76e-b4e7044e2096)
+            Saved LHR to https://lhci.example.com (2d027171-faf1-40af-bbdb-a4cc8a04a4d5)
+            Saved LHR to https://lhci.example.com (eef82c8e-cf94-4b3d-a76e-b4e7044e2096)
             Done saving build results to Lighthouse CI
-            View build diff at https://lhci.troydieter.com/app/projects/lhci-fargate/compare/9e77cb40-546e-4c64-b7b1-0ad538255d9b
+            View build diff at https://lhci.example.com/app/projects/lhci-fargate/compare/9e77cb40-546e-4c64-b7b1-0ad538255d9b
             No GitHub token set, skipping GitHub status check.
 
             Done running autorun.
     
-    11. Observe the results on the `lhci` server: https://lhci.example.com
+9. Observe the results on the `lhci` server: https://lhci.example.com
 
         ![results](https://i.imgur.com/coKUZbs.png)
 ## Diagram
 ![diagram](https://i.imgur.com/OcZkkr2.png)
-
-## Noted cleanup
-
-1. ~~You may need to clean up `EFS` filesystems when creating and destroying this CDK app (they may persist)~~
-    > Per v1.2 - I've added the proper RemovalPolicy for the EFS FileSystem to Destroy after removal
-2. Check for any lingering `EIP`'s that may resided
 
 ## Useful commands
 
@@ -106,3 +98,4 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
+* `npm run lhci_deploy`       installs the necessary NPM packages, builds it and deploys it via AWS CDK
