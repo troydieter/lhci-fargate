@@ -14,7 +14,7 @@
     "@aws-cdk/aws-wafv2": "1.172.0",
     "@aws-solutions-constructs/aws-wafwebacl-alb": "2.21.0",
     "@types/jest": "27.5.2",
-    "@types/node": "16.11.34",
+    "@types/node": "16.11.58",
     "aws-cdk": "2.41.0",
     "cdk-watchful": "^0.6.192",
     "jest": "28.1.3",
