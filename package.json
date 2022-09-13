@@ -1,6 +1,6 @@
 {
   "name": "LHCI_Fargate",
-  "version": "1.5",
+  "version": "1.61",
   "bin": {
     "lhci-fargate": "bin/lhci-fargate.ts"
   },
