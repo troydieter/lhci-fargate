@@ -148,10 +148,10 @@ export class LHCIStack extends cdk.Stack {
                       name: "AWSManagedRulesCommonRuleSet",
                       vendorName: "AWS",
                       excludedRules: [
-                        {name: "AWS-AWSManagedRulesBotControlRuleSet"},
-                        {name: "AWS-AWSManagedRulesCommonRuleSet-UserAgent_BadBots_HEADER"},
-                        {name: "AWS-AWSManagedRulesCommonRuleSet-SizeRestrictions_BODY"},
-                        {name: "AWS-AWSManagedRulesCommonRuleSet-NoUserAgent_HEADER"}
+                        {name: "CrossSiteScripting_BODY"},
+                        {name: "NoUserAgent_HEADER"},
+                        {name: "SizeRestrictions_BODY"},
+                        {name: "UserAgent_BadBots_HEADER"}
                       ]
                   }
               },
