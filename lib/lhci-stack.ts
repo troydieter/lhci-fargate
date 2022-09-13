@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import { RemovalPolicy } from 'aws-cdk-lib';
 import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -7,7 +7,7 @@ import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import { HostedZone } from 'aws-cdk-lib/aws-route53';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct } from 'constructs';
+import { CfnWebACL, CfnWebACLAssociation } from 'aws-cdk-lib/aws-wafv2';
 import { Watchful } from 'cdk-watchful'
 export class LHCIStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -127,6 +127,42 @@ export class LHCIStack extends cdk.Stack {
         resources: ['*']
       })
     );
+
+    const webAcl = new CfnWebACL(this, "web-acl", {
+      defaultAction: {
+          allow: {}
+      },
+      scope: "REGIONAL",
+      visibilityConfig: {
+          cloudWatchMetricsEnabled: true,
+          metricName: "webACL",
+          sampledRequestsEnabled: true
+      },
+      rules: [
+          {
+              name: "AWS-AWSManagedRulesCommonRuleSet",
+              priority: 1,
+              overrideAction: {none: {}},
+              statement: {
+                  managedRuleGroupStatement: {
+                      name: "AWSManagedRulesCommonRuleSet",
+                      vendorName: "AWS",
+                      excludedRules: [{name: "AWS-AWSManagedRulesBotControlRuleSet"}]
+                  }
+              },
+              visibilityConfig: {
+                  cloudWatchMetricsEnabled: true,
+                  metricName: "awsCommonRules",
+                  sampledRequestsEnabled: true
+              }
+          },
+      ]
+  })
+  
+    new CfnWebACLAssociation(this, "web-acl-association", {
+        webAclArn: webAcl.attrArn,
+        resourceArn: lhcilb.loadBalancerArn
+    });
 
 
     const wf = new Watchful(this, 'watchful', {
