@@ -147,7 +147,12 @@ export class LHCIStack extends cdk.Stack {
                   managedRuleGroupStatement: {
                       name: "AWSManagedRulesCommonRuleSet",
                       vendorName: "AWS",
-                      excludedRules: [{name: "AWS-AWSManagedRulesBotControlRuleSet"}]
+                      excludedRules: [
+                        {name: "AWS-AWSManagedRulesBotControlRuleSet"},
+                        {name: "AWS-AWSManagedRulesCommonRuleSet-UserAgent_BadBots_HEADER"},
+                        {name: "AWS-AWSManagedRulesCommonRuleSet-SizeRestrictions_BODY"},
+                        {name: "AWS-AWSManagedRulesCommonRuleSet-NoUserAgent_HEADER"}
+                      ]
                   }
               },
               visibilityConfig: {
