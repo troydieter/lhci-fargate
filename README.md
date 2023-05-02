@@ -2,6 +2,9 @@
 
 Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
+# Now supporting AWS Graviton2 on Fargate!
+Save over 20%-30% on compute costs by switching this workload to AWS Graviton2.
+
 # Table of Contents
 - [Documentation](#documentation)
 - [Setup](#setup)
