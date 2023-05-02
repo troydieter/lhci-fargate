@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "aws-cdk-lib": "2.67.0",
-    "constructs": "10.1.261",
+    "constructs": "10.2.12",
     "source-map-support": "0.5.21",
     "@lhci/cli": "0.12.0"
   }
