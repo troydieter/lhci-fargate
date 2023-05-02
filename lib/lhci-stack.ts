@@ -54,7 +54,7 @@ export class LHCIStack extends cdk.Stack {
     });
 
     const containerDef = new ecs.ContainerDefinition(this, "LHCIContainerDef", {
-      image: ecs.ContainerImage.fromRegistry("patrickhulce/lhci-server:latest"),
+      image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext('docker_image') ),
       taskDefinition: taskDef
     });
 

@@ -28,6 +28,7 @@
       "aws",
       "aws-cn"
     ],
+    "docker_image": "trion/chromium-lighthouse",
     "fargate_vpc_cidr": "172.16.16.0/23",
     "lhci_domain_name": "lhci.troydieter.com",
     "lhci_domain_zone_name": "troydieter.com.",
