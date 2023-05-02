@@ -33,6 +33,10 @@ export class LHCIStack extends cdk.Stack {
     const volumeName = 'efs-volume';
 
     const taskDef = new ecs.FargateTaskDefinition(this, "LHCITaskDef", {
+      runtimePlatform: {
+        operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        cpuArchitecture: ecs.CpuArchitecture.ARM64,
+      },
       cpu: 512,
       memoryLimitMiB: 1024,
     });
