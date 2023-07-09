@@ -11,10 +11,30 @@ module.exports = {
             hostname: '127.0.0.1'
         }
     },
+    assert: {
+        assertions: {
+          'categories:performance': [
+            'error',
+            { minScore: 0.9, aggregationMethod: 'median-run' },
+          ],
+          'categories:accessibility': [
+            'error',
+            { minScore: 1, aggregationMethod: 'pessimistic' },
+          ],
+          'categories:best-practices': [
+            'error',
+            { minScore: 1, aggregationMethod: 'pessimistic' },
+          ],
+          'categories:seo': [
+            'error',
+            { minScore: 1, aggregationMethod: 'pessimistic' },
+          ],
+        },
+      },
     upload: {
         target: 'lhci',
         serverBaseUrl: 'https://lhci.example.com',
-        token: 'example-000-example',
+        token: 'BUILD-TOKEN-HERE-FROM-LHCI-WIZARD',
         ignoreDuplicateBuildFailure: true,
         allowOverwriteOfLatestBranchBuild: true
     },
