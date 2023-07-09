@@ -54,7 +54,7 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
             },
             },
         };
-    7. Replace the `buildToken` to the `lighthouserc.js` file to the `token` value as seen above
+    7. Replace the `buildToken` value provided by `lhci-wizard` in the `lighthouserc.js` file with the `token` value as seen above (shown under `upload`)
     8. Browse to the LHCI server (for example, https://lhci.example.com , click the left navigational\drop down pane (looking for the value set previously and click the `gear` in the upper-hand left corner)
     9. Add in the `adminToken` to the field in the settings for the LH project
     10. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
