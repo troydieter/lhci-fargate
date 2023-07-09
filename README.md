@@ -33,64 +33,88 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
 6. Modify your `lighthouserc.js` file accordingly:
 
-        module.exports = {
-            ci: {
-            collect: {
-                url: "https://www.example.com",
-                maxAutodiscoverUrls: 3,
-                numberOfRuns: 2,
-                settings: {
-                    chromeFlags: "--no-sandbox",
-                    onlyCategories: ["performance", "best-practices", "accessibility", "seo"],
-                    skipAudits: ['uses-http2', 'uses-long-cache-ttl', 'link-text']
-                }
-            },
-            upload: {
-                target: 'lhci',
-                serverBaseUrl: 'https://lhci.example.com',
-                token: 'example-000-example',
-                ignoreDuplicateBuildFailure: true,
-                allowOverwriteOfLatestBranchBuild: true
-            },
-            },
-        };
-    7. Replace the `buildToken` value provided by `lhci-wizard` in the `lighthouserc.js` file with the `token` value as seen above (shown under `upload`)
-    8. Browse to the LHCI server (for example, https://lhci.example.com , click the left navigational\drop down pane (looking for the value set previously and click the `gear` in the upper-hand left corner)
-    9. Add in the `adminToken` to the field in the settings for the LH project
-    10. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
+```json
+module.exports = {
+    ci: {
+    collect: {
+        url: "https://www.example.com",
+        maxAutodiscoverUrls: 3,
+        numberOfRuns: 2,
+        settings: {
+            chromeFlags: "--no-sandbox",
+            onlyCategories: ["performance", "best-practices", "accessibility", "seo"],
+            skipAudits: ['uses-http2', 'uses-long-cache-ttl', 'link-text']
+            // hostname: "127.0.0.1"
+        }
+    },
+    // assert: {
+    //     assertions: {
+    //       'categories:performance': [
+    //         'error',
+    //         { minScore: 0.9, aggregationMethod: 'median-run' },
+    //       ],
+    //       'categories:accessibility': [
+    //         'error',
+    //         { minScore: 1, aggregationMethod: 'pessimistic' },
+    //       ],
+    //       'categories:best-practices': [
+    //         'error',
+    //         { minScore: 1, aggregationMethod: 'pessimistic' },
+    //       ],
+    //       'categories:seo': [
+    //         'error',
+    //         { minScore: 1, aggregationMethod: 'pessimistic' },
+    //       ],
+    //     },
+    //   },
+    upload: {
+        target: 'lhci',
+        serverBaseUrl: 'https://lhci.example.com',
+        token: 'REPLACE-ME-WITH-LHCI-WIZARD-BUILD-TOKEN-VALUE',
+        ignoreDuplicateBuildFailure: true,
+        allowOverwriteOfLatestBranchBuild: true
+    },
+    },
+};
+```
 
-            PS C:\coderepo\lhci-fargate> lhci autorun
-            ✅  .lighthouseci/ directory writable
-            ✅  Configuration file found
-            ✅  Chrome installation found
-            ⚠️   GitHub token not set
-            ✅  Ancestor hash determinable
-            ✅  LHCI server reachable
-            ✅  LHCI server API-compatible
-            ✅  LHCI server token valid
-            ✅  LHCI server can accept a build for this commit hash
-            Healthcheck passed!
+7. Replace the `buildToken` value provided by `lhci-wizard` in the `lighthouserc.js` file with the `token` value as seen above (shown under `upload`)
+8. Browse to the LHCI server (for example, https://lhci.example.com , click the left navigational\drop down pane (looking for the value set previously and click the `gear` in the upper-hand left corner)
+9. Add in the `adminToken` to the field in the settings for the LH project
+10. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
 
-            Running Lighthouse 2 time(s) on https://www.troydieter.com
-            Run #1...done.
-            Run #2...done.
-            Done running Lighthouse!
+        PS C:\coderepo\lhci-fargate> lhci autorun
+        ✅  .lighthouseci/ directory writable
+        ✅  Configuration file found
+        ✅  Chrome installation found
+        ⚠️   GitHub token not set
+        ✅  Ancestor hash determinable
+        ✅  LHCI server reachable
+        ✅  LHCI server API-compatible
+        ✅  LHCI server token valid
+        ✅  LHCI server can accept a build for this commit hash
+        Healthcheck passed!
 
-            Saving CI project lhci-fargate (780548b4-d479-4403-9500-e57f87b64d8d)
-            Saving CI build (9e77cb40-546e-4c64-b7b1-0ad538255d9b)
-            Saved LHR to https://lhci.troydieter.com (2d027171-faf1-40af-bbdb-a4cc8a04a4d5)
-            Saved LHR to https://lhci.troydieter.com (eef82c8e-cf94-4b3d-a76e-b4e7044e2096)
-            Done saving build results to Lighthouse CI
-            View build diff at https://lhci.troydieter.com/app/projects/lhci-fargate/compare/9e77cb40-546e-4c64-b7b1-0ad538255d9b
-            No GitHub token set, skipping GitHub status check.
+        Running Lighthouse 2 time(s) on https://www.example.com
+        Run #1...done.
+        Run #2...done.
+        Done running Lighthouse!
 
-            Done running autorun.
-    
-    11. Observe the results on the `lhci` server. Browse to: https://lhci.example.com
+        Saving CI project lhci-fargate (780548b4-d479-4403-9500-e57f87b64d8d)
+        Saving CI build (9e77cb40-546e-4c64-b7b1-0ad538255d9b)
+        Saved LHR to https://lhci.example.com (2d027171-faf1-40af-bbdb-a4cc8a04a4d5)
+        Saved LHR to https://lhci.example.com (eef82c8e-cf94-4b3d-a76e-b4e7044e2096)
+        Done saving build results to Lighthouse CI
+        View build diff at https://lhci.example.com/app/projects/lhci-fargate/compare/9e77cb40-546e-4c64-b7b1-0ad538255d9b
+        No GitHub token set, skipping GitHub status check.
 
-        ![results](https://i.imgur.com/coKUZbs.png)
+        Done running autorun.
 
-## Diagram
+11. Observe the results on the `lhci` server. Browse to: https://lhci.example.com
+
+    ![results](https://i.imgur.com/coKUZbs.png)
+
+## Diagram (example)
 ![diagram](https://i.imgur.com/OcZkkr2.png)
 
 ## Useful commands
