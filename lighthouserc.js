@@ -7,7 +7,8 @@ module.exports = {
         settings: {
             chromeFlags: "--no-sandbox",
             onlyCategories: ["performance", "best-practices", "accessibility", "seo"],
-            skipAudits: ['uses-http2', 'uses-long-cache-ttl', 'link-text']
+            skipAudits: ['uses-http2', 'uses-long-cache-ttl', 'link-text'],
+            hostname: '127.0.0.1'
         }
     },
     upload: {
