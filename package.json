@@ -22,6 +22,6 @@
     "aws-cdk-lib": "2.95.1",
     "constructs": "10.2.70",
     "source-map-support": "0.5.21",
-    "@lhci/cli": "0.12.0"
+    "@lhci/cli": "0.13.0"
   }
 }
