@@ -1,5 +1,5 @@
 # LHCI-Fargate v1.70
-###  `lhci-cli v0.13.0`
+###  `lhci-cli v0.14.0`
 
 Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
