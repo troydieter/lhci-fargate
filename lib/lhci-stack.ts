@@ -14,7 +14,7 @@ export class LHCIStack extends cdk.Stack {
     super(scope, id, props);
 
     const vpc = new ec2.Vpc(this, 'lhcivpc', {
-      cidr: this.node.tryGetContext('fargate_vpc_cidr')
+      ipAddresses: this.node.tryGetContext('fargate_vpc_cidr')
     });
     const ecsCluster = new ecs.Cluster(this, 'LHCIECSCluster', { vpc: vpc });
 
