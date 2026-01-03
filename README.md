@@ -1,8 +1,8 @@
-# LHCI-Fargate v1.70
+# LHCI-Fargate v2.1
 
-### Python CDK Implementation
+### Python CDK Implementation with Aurora PostgreSQL
 
-Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate using Python.
+Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate using Python with Aurora Serverless v2 PostgreSQL database.
 
 # Table of Contents
 
@@ -20,6 +20,15 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate using Python.
 2. Python 3.7+ installed
 3. Node.js and npm (for Lighthouse CI CLI)
 4. A Route 53 hosted zone for your domain
+
+## Architecture
+
+This deployment uses:
+- **AWS Fargate** for containerized LHCI server
+- **Aurora Serverless v2 PostgreSQL** for data storage (scales 0.5-1.0 ACUs)
+- **Application Load Balancer** with SSL/TLS termination
+- **AWS WAF** for web application protection
+- **CloudWatch** for logging and monitoring
 
 ## Configuration
 
@@ -54,6 +63,8 @@ Update these values according to your environment before deployment.
    ```
 
 3. Wait for deployment to complete. The LHCI server will be available at your configured domain.
+
+   **Note**: Aurora Serverless v2 takes 5-10 minutes to initialize on first deployment.
 
 ## Lighthouse CI Setup
 
@@ -204,4 +215,16 @@ View your Lighthouse CI results at your deployed server: https://lhci.example.co
 
 ## Notes
 
-This project uses Python CDK for infrastructure deployment. The Lighthouse CI functionality requires the separate `@lhci/cli` package for running audits.
+This project uses Python CDK for infrastructure deployment with Aurora Serverless v2 PostgreSQL for enterprise-grade data storage. The Lighthouse CI functionality requires the separate `@lhci/cli` package for running audits.
+
+### Cost Optimization
+- **Aurora Serverless v2**: Scales from 0.5-1.0 ACUs (~$13-26/month)
+- **Fargate**: Starts with 1 instance, scales 1-4 based on demand
+- **Auto-scaling**: Both CPU and memory-based scaling with cooldown periods
+
+### Security Features
+- Database credentials managed via AWS Secrets Manager
+- Container runs as non-root user
+- VPC with private subnets for database isolation
+- WAF protection with AWS managed rules
+- Encryption at rest and in transit

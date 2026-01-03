@@ -34,8 +34,16 @@ LOG_RETENTION_DAYS = 30
 SCALE_IN_COOLDOWN_MINUTES = 5
 SCALE_OUT_COOLDOWN_MINUTES = 2
 
-# Environment Variables
-CONTAINER_ENVIRONMENT = {
-    "LHCI_STORAGE__SQL_DIALECT": "sqlite",
-    "LHCI_STORAGE__SQL_DATABASE_PATH": "/data/lhci.db"
+# Database Configuration
+DB_ENGINE = "postgres"
+DB_PORT = 5432
+DB_NAME = "lhci"
+DB_USERNAME = "lhci_admin"
+AURORA_MIN_CAPACITY = 0.5  # Minimum ACUs (Aurora Capacity Units)
+AURORA_MAX_CAPACITY = 1.0  # Maximum ACUs for small workload
+
+# Environment Variables (connection URL will be constructed dynamically)
+CONTAINER_ENVIRONMENT_BASE = {
+    "LHCI_STORAGE__SQL_DIALECT": "postgres"
+    # LHCI_STORAGE__SQL_CONNECTION_URL will be added dynamically with secrets
 }

@@ -6,9 +6,10 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_ecs as ecs,
     aws_ecs_patterns as ecs_patterns,
-    aws_efs as efs,
     aws_iam as iam,
     aws_logs as logs,
+    aws_rds as rds,
+    aws_secretsmanager as secretsmanager,
     aws_wafv2 as wafv2,
 )
 from aws_cdk.aws_route53 import HostedZone
@@ -22,7 +23,7 @@ class LHCIStack(cdk.Stack):
 
         # Apply common tags to all resources
         cdk.Tags.of(self).add("Project", "LHCI-Fargate")
-        cdk.Tags.of(self).add("Environment", "Production")
+        cdk.Tags.of(self).add("Environment", "dev")
         cdk.Tags.of(self).add("Owner", self.node.try_get_context("lhci_mon_email") or "admin")
         cdk.Tags.of(self).add("CostCenter", "Engineering")
         cdk.Tags.of(self).add("ManagedBy", "CDK")
@@ -51,27 +52,43 @@ class LHCIStack(cdk.Stack):
         # ECS Cluster
         ecs_cluster = ecs.Cluster(self, "LHCIECSCluster", vpc=vpc)
         
-        # EFS FileSystem
-        file_system = efs.FileSystem(
+        # Database credentials secret
+        db_credentials = rds.DatabaseSecret(
             self,
-            "LHCIEfsFileSystem",
+            "LHCIDBCredentials",
+            username=config.DB_USERNAME
+        )
+        
+        # Aurora Serverless v2 Cluster
+        aurora_cluster = rds.DatabaseCluster(
+            self,
+            "LHCIAuroraCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(
+                version=rds.AuroraPostgresEngineVersion.VER_15_7
+            ),
+            credentials=rds.Credentials.from_secret(db_credentials),
+            default_database_name=config.DB_NAME,
             vpc=vpc,
-            encrypted=True,
-            lifecycle_policy=efs.LifecyclePolicy.AFTER_14_DAYS,
-            performance_mode=efs.PerformanceMode.GENERAL_PURPOSE,
-            throughput_mode=efs.ThroughputMode.BURSTING,
-            removal_policy=RemovalPolicy.DESTROY
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
+            ),
+            storage_encrypted=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            writer=rds.ClusterInstance.serverless_v2("writer", 
+                scale_with_writer=True
+            ),
+            serverless_v2_min_capacity=config.AURORA_MIN_CAPACITY,
+            serverless_v2_max_capacity=config.AURORA_MAX_CAPACITY
         )
         
-        # EFS AccessPoint
-        access_point = efs.AccessPoint(
+        # Security group for Aurora cluster
+        aurora_sg = ec2.SecurityGroup(
             self,
-            "AccessPoint",
-            file_system=file_system
+            "AuroraSecurityGroup",
+            vpc=vpc,
+            description="Security group for Aurora PostgreSQL cluster",
+            allow_all_outbound=False
         )
-        
-        # Volume name for EFS mount
-        volume_name = "efs-volume"
         
         # Fargate Task Definition
         task_def = ecs.FargateTaskDefinition(
@@ -81,18 +98,8 @@ class LHCIStack(cdk.Stack):
             memory_limit_mib=config.FARGATE_MEMORY_MB
         )
         
-        # Add EFS volume to task definition
-        task_def.add_volume(
-            name=volume_name,
-            efs_volume_configuration=ecs.EfsVolumeConfiguration(
-                file_system_id=file_system.file_system_id,
-                transit_encryption="ENABLED",
-                authorization_config=ecs.AuthorizationConfig(
-                    access_point_id=access_point.access_point_id,
-                    iam="ENABLED"
-                )
-            )
-        )
+        # Grant task access to database secret
+        db_credentials.grant_read(task_def.task_role)
         
         # Container Definition
         container_def = ecs.ContainerDefinition(
@@ -104,18 +111,22 @@ class LHCIStack(cdk.Stack):
                 stream_prefix="lhci",
                 log_retention=logs.RetentionDays.ONE_MONTH
             ),
-            environment=config.CONTAINER_ENVIRONMENT,
+            environment={
+                **config.CONTAINER_ENVIRONMENT_BASE,
+                "LHCI_STORAGE__SQL_HOST": aurora_cluster.cluster_endpoint.hostname,
+                "LHCI_STORAGE__SQL_PORT": str(config.DB_PORT),
+                "LHCI_STORAGE__SQL_DATABASE": config.DB_NAME,
+                "LHCI_STORAGE__SQL_USERNAME": config.DB_USERNAME
+            },
+            secrets={
+                # Get password from the database secret
+                "LHCI_STORAGE__SQL_PASSWORD": ecs.Secret.from_secrets_manager(
+                    db_credentials,
+                    field="password"
+                )
+            },
             user=config.LHCI_CONTAINER_USER,
             readonly_root_filesystem=False  # Required for LHCI to write temp files
-        )
-        
-        # Add mount points
-        container_def.add_mount_points(
-            ecs.MountPoint(
-                container_path=config.EFS_MOUNT_PATH,
-                source_volume=volume_name,
-                read_only=False
-            )
         )
         
         # Add port mappings
@@ -150,6 +161,13 @@ class LHCIStack(cdk.Stack):
             redirect_http=True,
             domain_name=self.node.try_get_context("lhci_domain_name"),
             domain_zone=lhci_domain_zone_name
+        )
+        
+        # Allow Fargate service to connect to Aurora
+        aurora_cluster.connections.allow_from(
+            alb_fargate_service.service.connections,
+            ec2.Port.tcp(config.DB_PORT),
+            "Allow LHCI Fargate service to connect to Aurora PostgreSQL"
         )
         
         # Load balancer reference
@@ -196,32 +214,6 @@ class LHCIStack(cdk.Stack):
         # Override Platform version (until Latest = 1.4.0)
         alb_fargate_service_resource = alb_fargate_service.service.node.find_child("Service")
         alb_fargate_service_resource.add_property_override("PlatformVersion", "1.4.0")
-        
-        # Allow access to EFS from Fargate ECS
-        file_system.connections.allow_default_port_from(alb_fargate_service.service.connections)
-        
-        # IAM policy for EFS access
-        task_def.add_to_task_role_policy(
-            iam.PolicyStatement(
-                actions=[
-                    "elasticfilesystem:ClientRootAccess",
-                    "elasticfilesystem:ClientWrite",
-                    "elasticfilesystem:ClientMount",
-                    "elasticfilesystem:DescribeMountTargets"
-                ],
-                resources=[
-                    f"arn:aws:elasticfilesystem:{os.environ.get('CDK_DEFAULT_REGION')}:{os.environ.get('CDK_DEFAULT_ACCOUNT')}:file-system/{file_system.file_system_id}"
-                ]
-            )
-        )
-        
-        # IAM policy for EC2 describe permissions
-        task_def.add_to_task_role_policy(
-            iam.PolicyStatement(
-                actions=["ec2:DescribeAvailabilityZones"],
-                resources=["*"]
-            )
-        )
         
         # WAF v2 WebACL with managed rules
         web_acl = wafv2.CfnWebACL(
@@ -277,3 +269,19 @@ class LHCIStack(cdk.Stack):
             alarm_email=self.node.try_get_context("lhci_mon_email")
         )
         wf.watch_scope(alb_fargate_service)
+        
+        # Output the database endpoint for reference
+        cdk.CfnOutput(
+            self,
+            "DatabaseEndpoint",
+            value=aurora_cluster.cluster_endpoint.hostname,
+            description="Aurora PostgreSQL cluster endpoint"
+        )
+        
+        # Output the secret ARN for reference
+        cdk.CfnOutput(
+            self,
+            "DatabaseSecretArn",
+            value=db_credentials.secret_arn,
+            description="ARN of the database credentials secret"
+        )
