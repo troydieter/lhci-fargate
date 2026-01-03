@@ -94,3 +94,18 @@ class LHCIStack(cdk.Stack):
         container_def.add_port_mappings(
             ecs.PortMapping(container_port=9001)
         )
+        
+        # Route53 HostedZone lookup
+        lhci_domain_zone_name = HostedZone.from_lookup(
+            self,
+            "lhci_domain_zone_name",
+            domain_name=self.node.try_get_context("lhci_domain_zone_name")
+        )
+        
+        # ACM Certificate with DNS validation
+        cert = Certificate(
+            self,
+            "certificate",
+            domain_name=self.node.try_get_context("lhci_domain_name"),
+            validation=CertificateValidation.from_dns(lhci_domain_zone_name)
+        )
