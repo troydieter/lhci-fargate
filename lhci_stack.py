@@ -156,3 +156,26 @@ class LHCIStack(cdk.Stack):
         
         # Allow access to EFS from Fargate ECS
         file_system.connections.allow_default_port_from(alb_fargate_service.service.connections)
+        
+        # IAM policy for EFS access
+        task_def.add_to_task_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "elasticfilesystem:ClientRootAccess",
+                    "elasticfilesystem:ClientWrite",
+                    "elasticfilesystem:ClientMount",
+                    "elasticfilesystem:DescribeMountTargets"
+                ],
+                resources=[
+                    f"arn:aws:elasticfilesystem:{os.environ.get('CDK_DEFAULT_REGION')}:{os.environ.get('CDK_DEFAULT_ACCOUNT')}:file-system/{file_system.file_system_id}"
+                ]
+            )
+        )
+        
+        # IAM policy for EC2 describe permissions
+        task_def.add_to_task_role_policy(
+            iam.PolicyStatement(
+                actions=["ec2:DescribeAvailabilityZones"],
+                resources=["*"]
+            )
+        )
