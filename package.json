@@ -16,7 +16,7 @@
     "cdk-watchful": "0.6.458",
     "jest": "29.7.0",
     "ts-jest": "29.2.5",
-    "typescript": "5.7.2"
+    "typescript": "5.9.3"
   },
   "dependencies": {
     "aws-cdk-lib": "2.214.0",
