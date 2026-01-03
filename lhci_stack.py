@@ -60,25 +60,14 @@ class LHCIStack(cdk.Stack):
             lifecycle_policy=efs.LifecyclePolicy.AFTER_14_DAYS,
             performance_mode=efs.PerformanceMode.GENERAL_PURPOSE,
             throughput_mode=efs.ThroughputMode.BURSTING,
-            enable_backup_policy=True,
             removal_policy=RemovalPolicy.DESTROY
         )
         
-        # EFS AccessPoint with proper POSIX permissions
+        # EFS AccessPoint
         access_point = efs.AccessPoint(
             self,
             "AccessPoint",
-            file_system=file_system,
-            path=config.EFS_ACCESS_POINT_PATH,
-            creation_info=efs.CreationInfo(
-                owner_gid=config.EFS_GROUP_ID,
-                owner_uid=config.EFS_USER_ID,
-                permissions="755"
-            ),
-            posix_user=efs.PosixUser(
-                gid=config.EFS_GROUP_ID,
-                uid=config.EFS_USER_ID
-            )
+            file_system=file_system
         )
         
         # Volume name for EFS mount
