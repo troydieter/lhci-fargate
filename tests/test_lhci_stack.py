@@ -5,8 +5,23 @@ from lhci_stack import LHCIStack
 
 def test_lhci_stack_created():
     """Test that LHCIStack can be instantiated successfully."""
-    app = cdk.App()
-    stack = LHCIStack(app, "TestStack")
+    app = cdk.App(
+        context={
+            "fargate_vpc_cidr": "10.0.0.0/16",
+            "lhci_domain_zone_name": "example.com",
+            "lhci_domain_name": "lhci.example.com",
+            "lhci_health_check_port": "9001",
+            "lhci_mon_email": "test@example.com"
+        }
+    )
+    stack = LHCIStack(
+        app, 
+        "TestStack",
+        env=cdk.Environment(
+            account="123456789012",
+            region="us-east-1"
+        )
+    )
     template = assertions.Template.from_stack(stack)
     
     # Verify VPC is created
