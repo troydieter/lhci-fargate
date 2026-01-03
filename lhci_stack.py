@@ -226,3 +226,11 @@ class LHCIStack(cdk.Stack):
             web_acl_arn=web_acl.attr_arn,
             resource_arn=lhcilb.load_balancer_arn
         )
+        
+        # Watchful monitoring
+        wf = Watchful(
+            self,
+            "watchful",
+            alarm_email=self.node.try_get_context("lhci_mon_email")
+        )
+        wf.watch_scope(alb_fargate_service)
