@@ -11,10 +11,9 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 
 ## Setup
 1. Configure cdk.json with your Route 53 forward zone and desired CNAME record name
-2. `npm i`
-3. `npm run build`
-4. `cdk deploy`
-5. `lhci wizard` will yield something similar to:
+2. `pip install -r requirements.txt`
+3. `cdk deploy`
+4. `lhci wizard` will yield something similar to:
 
 > troy:/mnt/c/coderepo/lhci-fargate$ lhci wizard
 >
@@ -28,7 +27,7 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate.
 >
 > ? What branch is considered the repo's trunk or main branch? main
 
-6. Modify your `lighthouserc.js` file accordingly:
+5. Modify your `lighthouserc.js` file accordingly:
 
 ```json
 module.exports = {
@@ -75,10 +74,10 @@ module.exports = {
 };
 ```
 
-7. Replace the `buildToken` value provided by `lhci-wizard` in the `lighthouserc.js` file with the `token` value as seen above (shown under `upload`)
-8. Browse to the LHCI server (for example, https://lhci.example.com , click the left navigational\drop down pane (looking for the value set previously and click the `gear` in the upper-hand left corner)
-9. Add in the `adminToken` to the field in the settings for the LH project
-10. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
+6. Replace the `buildToken` value provided by `lhci-wizard` in the `lighthouserc.js` file with the `token` value as seen above (shown under `upload`)
+7. Browse to the LHCI server (for example, https://lhci.example.com , click the left navigational\drop down pane (looking for the value set previously and click the `gear` in the upper-hand left corner)
+8. Add in the `adminToken` to the field in the settings for the LH project
+9. Run `lhci autorun` to run the `lh-cli` with the settings defined in the `.lighthouserc.js` file
 
         PS C:\coderepo\lhci-fargate> lhci autorun
         ✅  .lighthouseci/ directory writable
@@ -107,7 +106,7 @@ module.exports = {
 
         Done running autorun.
 
-11. Observe the results on the `lhci` server. Browse to: https://lhci.example.com
+10. Observe the results on the `lhci` server. Browse to: https://lhci.example.com
 
     ![results](https://i.imgur.com/coKUZbs.png)
 
@@ -116,9 +115,9 @@ module.exports = {
 
 ## Useful commands
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
+* `pip install -r requirements.txt`   install Python dependencies
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
+
+Note: This project uses Python CDK. TypeScript compilation is no longer needed.
