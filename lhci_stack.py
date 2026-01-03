@@ -179,3 +179,50 @@ class LHCIStack(cdk.Stack):
                 resources=["*"]
             )
         )
+        
+        # WAF v2 WebACL with managed rules
+        web_acl = wafv2.CfnWebACL(
+            self,
+            "web-acl",
+            default_action={"allow": {}},
+            scope="REGIONAL",
+            visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled=True,
+                metric_name="webACL",
+                sampled_requests_enabled=True
+            ),
+            rules=[
+                wafv2.CfnWebACL.RuleProperty(
+                    name="AWS-AWSManagedRulesCommonRuleSet",
+                    priority=1,
+                    override_action=wafv2.CfnWebACL.OverrideActionProperty(
+                        none={}
+                    ),
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                            name="AWSManagedRulesCommonRuleSet",
+                            vendor_name="AWS",
+                            excluded_rules=[
+                                wafv2.CfnWebACL.ExcludedRuleProperty(name="CrossSiteScripting_BODY"),
+                                wafv2.CfnWebACL.ExcludedRuleProperty(name="NoUserAgent_HEADER"),
+                                wafv2.CfnWebACL.ExcludedRuleProperty(name="SizeRestrictions_BODY"),
+                                wafv2.CfnWebACL.ExcludedRuleProperty(name="UserAgent_BadBots_HEADER")
+                            ]
+                        )
+                    ),
+                    visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                        cloud_watch_metrics_enabled=True,
+                        metric_name="awsCommonRules",
+                        sampled_requests_enabled=True
+                    )
+                )
+            ]
+        )
+        
+        # WAF WebACL Association
+        wafv2.CfnWebACLAssociation(
+            self,
+            "web-acl-association",
+            web_acl_arn=web_acl.attr_arn,
+            resource_arn=lhcilb.load_balancer_arn
+        )
