@@ -12,20 +12,6 @@ b'!!                                                                            
 b'!!  This warning can be silenced by setting the JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION environment variable.        !!\n'
 b'!!                                                                                                                      !!\n'
 b'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n'
-b'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n'
-b'!!                                                                                                                      !!\n'
-b'!!  This software has not been tested with node v25.2.1.                                                                !!\n'
-b'!!  Should you encounter odd runtime issues, please try using one of the supported release before filing a bug report.  !!\n'
-b'!!                                                                                                                      !!\n'
-b'!!  This software is currently running on node v25.2.1.                                                                 !!\n'
-b'!!  As of the current release of this software, supported node releases are:                                            !!\n'
-b'!!  - ^24.0.0 (Planned end-of-life: 2028-04-30)                                                                         !!\n'
-b'!!  - ^22.0.0 (Planned end-of-life: 2027-04-30)                                                                         !!\n'
-b'!!  - ^20.0.0 (Planned end-of-life: 2026-04-30)                                                                         !!\n'
-b'!!                                                                                                                      !!\n'
-b'!!  This warning can be silenced by setting the JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION environment variable.        !!\n'
-b'!!                                                                                                                      !!\n'
-b'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n'
 [Warning at /LHCIStack/Service01/Service] minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]
 Resources:
   lhcivpc965AD59A:
