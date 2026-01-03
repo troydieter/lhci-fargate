@@ -3,6 +3,14 @@
 *.d.ts
 node_modules
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
 # CDK asset staging directory
 .cdk.staging
 cdk.out
