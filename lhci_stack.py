@@ -8,15 +8,36 @@ from aws_cdk import (
     aws_ecs_patterns as ecs_patterns,
     aws_efs as efs,
     aws_iam as iam,
+    aws_logs as logs,
     aws_wafv2 as wafv2,
 )
 from aws_cdk.aws_route53 import HostedZone
 from cdk_watchful import Watchful
+import config
 
 
 class LHCIStack(cdk.Stack):
     def __init__(self, scope: cdk.App, id: str, **kwargs):
         super().__init__(scope, id, **kwargs)
+
+        # Apply common tags to all resources
+        cdk.Tags.of(self).add("Project", "LHCI-Fargate")
+        cdk.Tags.of(self).add("Environment", "Production")
+        cdk.Tags.of(self).add("Owner", self.node.try_get_context("lhci_mon_email") or "admin")
+        cdk.Tags.of(self).add("CostCenter", "Engineering")
+        cdk.Tags.of(self).add("ManagedBy", "CDK")
+
+        # Validate required context values
+        required_context = [
+            "fargate_vpc_cidr",
+            "lhci_domain_name", 
+            "lhci_domain_zone_name",
+            "lhci_mon_email"
+        ]
+        
+        for key in required_context:
+            if not self.node.try_get_context(key):
+                raise ValueError(f"Required context value '{key}' is missing from cdk.json")
 
         # VPC configuration
         vpc = ec2.Vpc(
@@ -39,14 +60,25 @@ class LHCIStack(cdk.Stack):
             lifecycle_policy=efs.LifecyclePolicy.AFTER_14_DAYS,
             performance_mode=efs.PerformanceMode.GENERAL_PURPOSE,
             throughput_mode=efs.ThroughputMode.BURSTING,
+            enable_backup_policy=True,
             removal_policy=RemovalPolicy.DESTROY
         )
         
-        # EFS AccessPoint
+        # EFS AccessPoint with proper POSIX permissions
         access_point = efs.AccessPoint(
             self,
             "AccessPoint",
-            file_system=file_system
+            file_system=file_system,
+            path=config.EFS_ACCESS_POINT_PATH,
+            creation_info=efs.CreationInfo(
+                owner_gid=config.EFS_GROUP_ID,
+                owner_uid=config.EFS_USER_ID,
+                permissions="755"
+            ),
+            posix_user=efs.PosixUser(
+                gid=config.EFS_GROUP_ID,
+                uid=config.EFS_USER_ID
+            )
         )
         
         # Volume name for EFS mount
@@ -56,8 +88,8 @@ class LHCIStack(cdk.Stack):
         task_def = ecs.FargateTaskDefinition(
             self,
             "LHCITaskDef",
-            cpu=512,
-            memory_limit_mib=1024
+            cpu=config.FARGATE_CPU,
+            memory_limit_mib=config.FARGATE_MEMORY_MB
         )
         
         # Add EFS volume to task definition
@@ -77,14 +109,21 @@ class LHCIStack(cdk.Stack):
         container_def = ecs.ContainerDefinition(
             self,
             "LHCIContainerDef",
-            image=ecs.ContainerImage.from_registry("patrickhulce/lhci-server:latest"),
-            task_definition=task_def
+            image=ecs.ContainerImage.from_registry(config.LHCI_CONTAINER_IMAGE),
+            task_definition=task_def,
+            logging=ecs.LogDrivers.aws_logs(
+                stream_prefix="lhci",
+                log_retention=logs.RetentionDays.ONE_MONTH
+            ),
+            environment=config.CONTAINER_ENVIRONMENT,
+            user=config.LHCI_CONTAINER_USER,
+            readonly_root_filesystem=False  # Required for LHCI to write temp files
         )
         
         # Add mount points
         container_def.add_mount_points(
             ecs.MountPoint(
-                container_path="/data",
+                container_path=config.EFS_MOUNT_PATH,
                 source_volume=volume_name,
                 read_only=False
             )
@@ -92,7 +131,7 @@ class LHCIStack(cdk.Stack):
         
         # Add port mappings
         container_def.add_port_mappings(
-            ecs.PortMapping(container_port=9001)
+            ecs.PortMapping(container_port=config.LHCI_CONTAINER_PORT)
         )
         
         # Route53 HostedZone lookup
@@ -116,7 +155,7 @@ class LHCIStack(cdk.Stack):
             "Service01",
             cluster=ecs_cluster,
             task_definition=task_def,
-            desired_count=2,
+            desired_count=1,  # Start lean with 1 instance
             listener_port=443,
             certificate=cert,
             redirect_http=True,
@@ -129,14 +168,24 @@ class LHCIStack(cdk.Stack):
         
         # Auto-scaling configuration
         scalable_target = alb_fargate_service.service.auto_scale_task_count(
-            min_capacity=2,
-            max_capacity=4
+            min_capacity=config.MIN_CAPACITY,
+            max_capacity=config.MAX_CAPACITY
         )
         
         # CPU-based auto-scaling
         scalable_target.scale_on_cpu_utilization(
             "CpuScaling",
-            target_utilization_percent=75
+            target_utilization_percent=config.CPU_TARGET_UTILIZATION,
+            scale_in_cooldown=cdk.Duration.minutes(config.SCALE_IN_COOLDOWN_MINUTES),
+            scale_out_cooldown=cdk.Duration.minutes(config.SCALE_OUT_COOLDOWN_MINUTES)
+        )
+        
+        # Memory-based auto-scaling
+        scalable_target.scale_on_memory_utilization(
+            "MemoryScaling",
+            target_utilization_percent=config.MEMORY_TARGET_UTILIZATION,
+            scale_in_cooldown=cdk.Duration.minutes(config.SCALE_IN_COOLDOWN_MINUTES),
+            scale_out_cooldown=cdk.Duration.minutes(config.SCALE_OUT_COOLDOWN_MINUTES)
         )
         
         # Target group configuration
@@ -147,7 +196,12 @@ class LHCIStack(cdk.Stack):
         
         # Health check configuration
         alb_fargate_service.target_group.configure_health_check(
-            healthy_http_codes=self.node.try_get_context("lhci_health_check_port")
+            healthy_http_codes=config.HEALTH_CHECK_CODES,
+            path=config.HEALTH_CHECK_PATH,
+            interval=cdk.Duration.seconds(config.HEALTH_CHECK_INTERVAL_SECONDS),
+            timeout=cdk.Duration.seconds(config.HEALTH_CHECK_TIMEOUT_SECONDS),
+            healthy_threshold_count=2,
+            unhealthy_threshold_count=3
         )
         
         # Override Platform version (until Latest = 1.4.0)
