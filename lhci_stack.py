@@ -109,3 +109,43 @@ class LHCIStack(cdk.Stack):
             domain_name=self.node.try_get_context("lhci_domain_name"),
             validation=CertificateValidation.from_dns(lhci_domain_zone_name)
         )
+        
+        # Application Load Balanced Fargate Service
+        alb_fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
+            self,
+            "Service01",
+            cluster=ecs_cluster,
+            task_definition=task_def,
+            desired_count=2,
+            listener_port=443,
+            certificate=cert,
+            redirect_http=True,
+            domain_name=self.node.try_get_context("lhci_domain_name"),
+            domain_zone=lhci_domain_zone_name
+        )
+        
+        # Load balancer reference
+        lhcilb = alb_fargate_service.load_balancer
+        
+        # Auto-scaling configuration
+        scalable_target = alb_fargate_service.service.auto_scale_task_count(
+            min_capacity=2,
+            max_capacity=4
+        )
+        
+        # CPU-based auto-scaling
+        scalable_target.scale_on_cpu_utilization(
+            "CpuScaling",
+            target_utilization_percent=75
+        )
+        
+        # Target group configuration
+        alb_fargate_service.target_group.set_attribute(
+            "deregistration_delay.timeout_seconds",
+            "30"
+        )
+        
+        # Health check configuration
+        alb_fargate_service.target_group.configure_health_check(
+            healthy_http_codes=self.node.try_get_context("lhci_health_check_port")
+        )
