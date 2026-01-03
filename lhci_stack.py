@@ -26,3 +26,28 @@ class LHCIStack(cdk.Stack):
                 self.node.try_get_context("fargate_vpc_cidr")
             )
         )
+        
+        # ECS Cluster
+        ecs_cluster = ecs.Cluster(self, "LHCIECSCluster", vpc=vpc)
+        
+        # EFS FileSystem
+        file_system = efs.FileSystem(
+            self,
+            "LHCIEfsFileSystem",
+            vpc=vpc,
+            encrypted=True,
+            lifecycle_policy=efs.LifecyclePolicy.AFTER_14_DAYS,
+            performance_mode=efs.PerformanceMode.GENERAL_PURPOSE,
+            throughput_mode=efs.ThroughputMode.BURSTING,
+            removal_policy=RemovalPolicy.DESTROY
+        )
+        
+        # EFS AccessPoint
+        access_point = efs.AccessPoint(
+            self,
+            "AccessPoint",
+            file_system=file_system
+        )
+        
+        # Volume name for EFS mount
+        volume_name = "efs-volume"
