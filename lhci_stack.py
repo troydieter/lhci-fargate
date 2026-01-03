@@ -149,3 +149,10 @@ class LHCIStack(cdk.Stack):
         alb_fargate_service.target_group.configure_health_check(
             healthy_http_codes=self.node.try_get_context("lhci_health_check_port")
         )
+        
+        # Override Platform version (until Latest = 1.4.0)
+        alb_fargate_service_resource = alb_fargate_service.service.node.find_child("Service")
+        alb_fargate_service_resource.add_property_override("PlatformVersion", "1.4.0")
+        
+        # Allow access to EFS from Fargate ECS
+        file_system.connections.allow_default_port_from(alb_fargate_service.service.connections)
