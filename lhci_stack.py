@@ -51,3 +51,46 @@ class LHCIStack(cdk.Stack):
         
         # Volume name for EFS mount
         volume_name = "efs-volume"
+        
+        # Fargate Task Definition
+        task_def = ecs.FargateTaskDefinition(
+            self,
+            "LHCITaskDef",
+            cpu=512,
+            memory_limit_mib=1024
+        )
+        
+        # Add EFS volume to task definition
+        task_def.add_volume(
+            name=volume_name,
+            efs_volume_configuration=ecs.EfsVolumeConfiguration(
+                file_system_id=file_system.file_system_id,
+                transit_encryption="ENABLED",
+                authorization_config=ecs.AuthorizationConfig(
+                    access_point_id=access_point.access_point_id,
+                    iam="ENABLED"
+                )
+            )
+        )
+        
+        # Container Definition
+        container_def = ecs.ContainerDefinition(
+            self,
+            "LHCIContainerDef",
+            image=ecs.ContainerImage.from_registry("patrickhulce/lhci-server:latest"),
+            task_definition=task_def
+        )
+        
+        # Add mount points
+        container_def.add_mount_points(
+            ecs.MountPoint(
+                container_path="/data",
+                source_volume=volume_name,
+                read_only=False
+            )
+        )
+        
+        # Add port mappings
+        container_def.add_port_mappings(
+            ecs.PortMapping(container_port=9001)
+        )
