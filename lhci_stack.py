@@ -157,12 +157,13 @@ class LHCIStack(cdk.Stack):
             certificate=cert,
             redirect_http=True,
             domain_name=self.node.try_get_context("lhci_domain_name"),
-            domain_zone=lhci_domain_zone_name,
-            deployment_configuration=ecs.DeploymentConfiguration(
-                minimum_healthy_percent=100,
-                maximum_percent=200
-            )
+            domain_zone=lhci_domain_zone_name
         )
+        
+        # Configure deployment settings to maintain minimum healthy tasks
+        cfn_service = alb_fargate_service.service.node.default_child
+        cfn_service.add_property_override("DeploymentConfiguration.MinimumHealthyPercent", 100)
+        cfn_service.add_property_override("DeploymentConfiguration.MaximumPercent", 200)
         
         # Load balancer reference
         lhcilb = alb_fargate_service.load_balancer
