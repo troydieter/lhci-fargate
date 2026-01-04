@@ -1,8 +1,8 @@
-# LHCI-Fargate v1.70
+# LHCI-Fargate v2.0
 
 ### Python CDK Implementation
 
-Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate using Python.
+Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate using AWS-CDK Python.
 
 # Table of Contents
 
