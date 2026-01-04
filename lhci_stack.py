@@ -157,7 +157,11 @@ class LHCIStack(cdk.Stack):
             certificate=cert,
             redirect_http=True,
             domain_name=self.node.try_get_context("lhci_domain_name"),
-            domain_zone=lhci_domain_zone_name
+            domain_zone=lhci_domain_zone_name,
+            deployment_configuration=ecs.DeploymentConfiguration(
+                minimum_healthy_percent=100,
+                maximum_percent=200
+            )
         )
         
         # Load balancer reference
