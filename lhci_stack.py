@@ -63,11 +63,19 @@ class LHCIStack(cdk.Stack):
             removal_policy=RemovalPolicy.DESTROY
         )
         
-        # EFS AccessPoint
-        access_point = efs.AccessPoint(
-            self,
+        # EFS AccessPoint with proper permissions
+        access_point = file_system.add_access_point(
             "AccessPoint",
-            file_system=file_system
+            path="/lhci-data",
+            create_acl=efs.Acl(
+                owner_uid="1001",
+                owner_gid="1001",
+                permissions="0755"
+            ),
+            posix_user=efs.PosixUser(
+                uid="1001",
+                gid="1001"
+            )
         )
         
         # Volume name for EFS mount

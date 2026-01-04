@@ -37,5 +37,6 @@ SCALE_OUT_COOLDOWN_MINUTES = 2
 # Environment Variables
 CONTAINER_ENVIRONMENT = {
     "LHCI_STORAGE__SQL_DIALECT": "sqlite",
-    "LHCI_STORAGE__SQL_DATABASE_PATH": "/data/lhci.db"
+    "LHCI_STORAGE__SQL_DATABASE_PATH": "/data/lhci.db",
+    "LHCI_STORAGE__SQL_CONNECTION_URL": "sqlite:/data/lhci.db"
 }
