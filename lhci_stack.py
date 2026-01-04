@@ -132,7 +132,7 @@ class LHCIStack(cdk.Stack):
             # Add startup command to construct connection URL
             command=[
                 "/bin/sh", "-c",
-                "export LHCI_STORAGE__SQL_CONNECTION_URL=\"postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME\" && exec lhci server"
+                "export LHCI_STORAGE__SQL_CONNECTION_URL=\"postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME\""
             ],
             user=config.LHCI_CONTAINER_USER,
             readonly_root_filesystem=False  # Required for LHCI to write temp files
