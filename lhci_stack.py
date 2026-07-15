@@ -1,4 +1,3 @@
-import os
 import aws_cdk as cdk
 from aws_cdk import RemovalPolicy
 from aws_cdk.aws_certificatemanager import Certificate, CertificateValidation
@@ -40,12 +39,16 @@ class LHCIStack(cdk.Stack):
                 raise ValueError(f"Required context value '{key}' is missing from cdk.json")
 
         # VPC configuration
+        # max_azs and nat_gateways are pinned explicitly so the footprint (and
+        # NAT Gateway cost) is predictable rather than defaulting to "all AZs"
         vpc = ec2.Vpc(
             self, 
             "lhcivpc",
             ip_addresses=ec2.IpAddresses.cidr(
                 self.node.try_get_context("fargate_vpc_cidr")
-            )
+            ),
+            max_azs=2,
+            nat_gateways=1
         )
         
         # ECS Cluster
@@ -68,13 +71,13 @@ class LHCIStack(cdk.Stack):
             "AccessPoint",
             path="/lhci-data",
             create_acl=efs.Acl(
-                owner_uid="1001",
-                owner_gid="1001",
+                owner_uid=str(config.EFS_USER_ID),
+                owner_gid=str(config.EFS_GROUP_ID),
                 permissions="0755"
             ),
             posix_user=efs.PosixUser(
-                uid="1001",
-                gid="1001"
+                uid=str(config.EFS_USER_ID),
+                gid=str(config.EFS_GROUP_ID)
             )
         )
         
@@ -147,6 +150,11 @@ class LHCIStack(cdk.Stack):
         )
         
         # Application Load Balanced Fargate Service
+        # min/max_healthy_percent are passed directly as props (rather than via
+        # add_property_override after the fact) so CDK's own construct validation
+        # sees the real values and doesn't warn about the 50% default.
+        # circuit_breaker enables automatic rollback if new tasks fail to
+        # stabilize, instead of ECS retrying for up to 3 hours before giving up.
         alb_fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
             "Service01",
@@ -157,13 +165,11 @@ class LHCIStack(cdk.Stack):
             certificate=cert,
             redirect_http=True,
             domain_name=self.node.try_get_context("lhci_domain_name"),
-            domain_zone=lhci_domain_zone_name
+            domain_zone=lhci_domain_zone_name,
+            min_healthy_percent=100,
+            max_healthy_percent=200,
+            circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True)
         )
-        
-        # Configure deployment settings to maintain minimum healthy tasks
-        cfn_service = alb_fargate_service.service.node.default_child
-        cfn_service.add_property_override("DeploymentConfiguration.MinimumHealthyPercent", 100)
-        cfn_service.add_property_override("DeploymentConfiguration.MaximumPercent", 200)
         
         # Load balancer reference
         lhcilb = alb_fargate_service.load_balancer
@@ -214,6 +220,8 @@ class LHCIStack(cdk.Stack):
         file_system.connections.allow_default_port_from(alb_fargate_service.service.connections)
         
         # IAM policy for EFS access
+        # Uses the construct's own ARN attribute instead of manually building
+        # the ARN string, so this stays correct across partitions (aws, aws-cn, etc.)
         task_def.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
@@ -222,13 +230,13 @@ class LHCIStack(cdk.Stack):
                     "elasticfilesystem:ClientMount",
                     "elasticfilesystem:DescribeMountTargets"
                 ],
-                resources=[
-                    f"arn:aws:elasticfilesystem:{os.environ.get('CDK_DEFAULT_REGION')}:{os.environ.get('CDK_DEFAULT_ACCOUNT')}:file-system/{file_system.file_system_id}"
-                ]
+                resources=[file_system.file_system_arn]
             )
         )
         
         # IAM policy for EC2 describe permissions
+        # ec2:DescribeAvailabilityZones does not support resource-level
+        # permissions, so a wildcard resource is required here.
         task_def.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=["ec2:DescribeAvailabilityZones"],

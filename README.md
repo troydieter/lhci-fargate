@@ -17,7 +17,7 @@ Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate using AWS-CDK Pytho
 ## Prerequisites
 
 1. AWS CLI configured with appropriate permissions
-2. Python 3.7+ installed
+2. Python 3.9+ installed
 3. Node.js and npm (for Lighthouse CI CLI)
 4. A Route 53 hosted zone for your domain
 

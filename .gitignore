@@ -20,3 +20,6 @@ diagram.json
 /.lighthouseci
 public/
 /cdk.context.json
+
+# Local testing/benchmark artifacts
+/testing/
