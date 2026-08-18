@@ -7,7 +7,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "aws-cdk-lib==2.261.0",
-        "constructs==10.6.0",
+        "constructs==10.8.1",
         "cdk-watchful==0.6.458"
     ],
     python_requires=">=3.9",
