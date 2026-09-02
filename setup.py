@@ -6,7 +6,7 @@ setup(
     description="Deployment of Lighthouse CI through AWS-CDK onto AWS Fargate",
     packages=find_packages(),
     install_requires=[
-        "aws-cdk-lib==2.261.0",
+        "aws-cdk-lib==2.268.0",
         "constructs==10.6.0",
         "cdk-watchful==0.6.458"
     ],
